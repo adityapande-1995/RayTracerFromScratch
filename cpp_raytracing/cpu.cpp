@@ -88,9 +88,9 @@ void render(std::vector<pixel> &image  ,hitable_list world, camera cam, int ns, 
 }
 
 // Main
-int main(){
+int main(int argc, char** argv){
   int nx = 200*4 ;int ny = 100*4 ; // Image size
-  int ns = 30 ; // Antialiasing samples per pixel
+  int ns = 20 ; // Antialiasing samples per pixel
 
   camera cam = camera();
 
@@ -104,27 +104,36 @@ int main(){
   hitable_list world = hitable_list(objects, 4);
   float gamma = 0.7;
 
-  //Render complete image single thread
-  std::vector<pixel> image;
-  render(image ,world, cam,ns, gamma,  nx, ny);
-  //Save image
-  std::cout << "P3\n" << nx << " " << ny << "\n255\n" ;
-  for (int i = 0 ; i < image.size() ; i++){
-    std::cout << image[i].ir << " " << " " << image[i].ig << " " << image[i].ib << std::endl;
+  // Number of threads to run
+  int n_th = 4;
+
+  int start = ny-1 ; int end = start - ny/n_th;
+  std::vector<std::vector <pixel>> Images;
+  std::vector<std::thread> Threads;
+
+  for (int i = 0; i < n_th ;i++){
+    std::vector <pixel> img;
+    Images.push_back(img);
   }
 
-  // Multithreading
-  // std::vector<pixel> image1;
-  // std::thread t1 (render, std::ref(image1) , world, cam, ns, gamma,  nx, ny, ny-1 , ny/2);
-  // std::vector<pixel> image2;
-  // std::thread t2 (render, std::ref(image2) , world, cam, ns, gamma,  nx, ny, ny/2 -1 , 0);
+  for (int i = 0; i < n_th ;i++){
+    Threads.push_back( std::thread (render, std::ref(Images[i]) , world, cam, ns, gamma,  nx, ny, start , end) );
+    // Update start and end
+    start = end -1 ;
+    end = start - ny/n_th;
+    if (end < 0){end = 0;}
+  }
 
-  // t1.join(); t2.join();
+  for (int i = 0 ; i < Threads.size() ; i++){
+    Threads[i].join();
+  }
 
-  // //Save image
-  // std::cout << "P3\n" << nx << " " << ny << "\n255\n" ;
-  // for (int i = 0 ; i < image1.size() ; i++){ std::cout << image1[i].ir << " " << " " << image1[i].ig << " " << image1[i].ib << std::endl; }
-  // for (int i = 0 ; i < image2.size() ; i++){ std::cout << image2[i].ir << " " << " " << image2[i].ig << " " << image2[i].ib << std::endl; }
+  // Saving the image
+  std::cout << "P3\n" << nx << " " << ny << "\n255\n" ;
+  for (int i = 0 ; i < n_th ; i++){
+    auto image = Images[i];
+    for (int j = 0 ; j < image.size() ; j++){ std::cout << image[j].ir << " " << " " << image[j].ig << " " << image[j].ib << std::endl; };
+  }
 
   return 0;
 }
