@@ -28,9 +28,10 @@ class gen_material{
  public:
   vec3 albedo = vec3(0,0,0);
   std::string name = "none";
+  float fuzz = 0;
   // Constructor
   gen_material(){};
-  gen_material(vec3 a, std::string name);
+  gen_material(vec3 a, std::string name, float fuzz);
 };
 
 // ************ Hit record class

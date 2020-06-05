@@ -9,7 +9,7 @@ std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_real_distribution<> dis(0, 1);
 
-// Random in unit sphere      -------- TESTED
+// Random in unit sphere      -------- 
 vec3 random_in_unit_sphere(){
   float t1 = dis(gen); float t2 = dis(gen); float t3 = dis(gen);
   vec3 p = vec3(t1,t2,t3)*2.0 - vec3(1,1,1);
@@ -23,23 +23,30 @@ vec3 random_in_unit_sphere(){
   return p;
 }
 
-//******* Reflect function  ----------  TESTED
+//******* Reflect function  ----------  
 vec3 reflect(vec3 v, vec3 n){ return v - n*dot(v,n)*2.0; }
 
-//**********/ Ray class     -----------  TESTED
+//**********/ Ray class     -----------  
 ray::ray(vec3 a, vec3 b){ this->A = a ; this->B = b; }
 vec3 ray::origin(){ return this->A ;}
 vec3 ray::direction(){ return this->B;  }
 vec3 ray::point_at_parameter(float t){ return this->A + this->B*t; }
 
-//**********/ hit record class --------- ?????
+//**********/ hit record class --------- 
 hit_record::hit_record(float t, vec3 p, vec3 normal, gen_material material ){
     this->t = t; this->p = p; this->normal = normal ; this->material = material;
 }
 
 //*****************************************/ Materials -----
-// Gen materials class    ---------- ?????
-gen_material::gen_material(vec3 a, std::string name){ this->albedo = a; this->name = name; }
+// Gen materials class    ---------- 
+gen_material::gen_material(vec3 a, std::string name, float fuzz){ this->albedo = a; this->name = name;
+  if (fuzz > 1.0){
+    this->fuzz = 1.0 ;
+  }
+  else{
+    this->fuzz = fuzz;
+  }
+}
 // Scatter function
 struct material_return scatter(gen_material& material, ray r_in, hit_record rec, vec3 attenuation, ray scattered){
   if (material.name == "lambert"){
@@ -53,7 +60,7 @@ struct material_return scatter(gen_material& material, ray r_in, hit_record rec,
 
   if (material.name == "metal"){
     vec3 reflected = reflect( unit_vector( r_in.direction() ), rec.normal );
-    scattered = ray(rec.p , reflected);
+    scattered = ray(rec.p , reflected + random_in_unit_sphere()*material.fuzz);
     attenuation = material.albedo;
 
     struct material_return temp;
@@ -138,14 +145,4 @@ struct sp_return hitable_list::hit(ray r, float t_min, float t_max , hit_record 
 ray camera::get_ray(float u, float v){
   return ray(this->origin, this->lower_left_corner + this->horizontal*u + this->vertical*v);
 }
-
-// // ********  main for testing
-// int main(){
-//   vec3 a = random_in_unit_sphere();
-//   vec3 b = vec3(1,1,1);
-//   ray c = ray(a,b);
-//   c.direction().print();
-//   return 0;
-// }
-
 

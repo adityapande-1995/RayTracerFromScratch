@@ -96,12 +96,12 @@ int main(int argc, char** argv){
 
   // List of objects in the world
   std::vector<sphere> objects;
-  objects.push_back( sphere(vec3(0,0,-1), 0.5, gen_material(vec3(0.8,0.3,0.3), "lambert") )  );
-  objects.push_back( sphere(vec3(0,-100.5,-1), 100.0, gen_material(vec3(0.8,0.8,0.0), "lambert") )  );
-  objects.push_back( sphere(vec3(1,0,-1.25), 0.5, gen_material(vec3(0.8,0.6,0.2), "metal") )  );
-  objects.push_back( sphere(vec3(-1,0,-1.25), 0.5, gen_material(vec3(0.8,0.8,0.8), "metal") )  );
+  objects.push_back( sphere(vec3(0,0,-1), 0.5, gen_material(vec3(0.8,0.3,0.3), "lambert", 0) )  );
+  objects.push_back( sphere(vec3(0,-100.5,-1), 100.0, gen_material(vec3(0.8,0.8,0.0), "lambert", 0) )  );
+  objects.push_back( sphere(vec3(1,0,-1.25), 0.5, gen_material(vec3(0.8,0.6,0.2), "metal", 0.3) )  );
+  objects.push_back( sphere(vec3(-1,0,-1.25), 0.5, gen_material(vec3(0.8,0.8,0.8), "metal", 0.1) )  );
 
-  hitable_list world = hitable_list(objects, 4);
+  hitable_list world = hitable_list(objects, objects.size());
   float gamma = 0.7;
 
   // Number of threads to run
