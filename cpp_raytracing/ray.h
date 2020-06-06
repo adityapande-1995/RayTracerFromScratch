@@ -5,6 +5,8 @@
 
 vec3 random_in_unit_sphere();
 vec3 reflect(vec3 v, vec3 n);
+bool refract(vec3 v, vec3 n, float ni_over_nt, vec3& refracted);
+float schlick(float cosine, float ref_idx);
 
 //**********/ Ray class     
 class ray{
@@ -79,8 +81,13 @@ class camera{
   vec3 vertical = vec3(0.0, 2.0, 0.0);
   vec3 origin = vec3(0.0, 0.0, 0.0);
 
+  camera(){}
+  camera(float vfov, float aspect);
+  camera(vec3 lookfrom, vec3 lookat, vec3 up, float vfov, float aspect);
+
   ray get_ray(float u, float v);
 };
+
 
 
 #endif

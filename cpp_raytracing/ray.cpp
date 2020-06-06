@@ -26,6 +26,26 @@ vec3 random_in_unit_sphere(){
 //******* Reflect function  ----------  
 vec3 reflect(vec3 v, vec3 n){ return v - n*dot(v,n)*2.0; }
 
+//******** Refract function */
+bool refract(vec3 v, vec3 n, float ni_over_nt, vec3& refracted){
+  vec3 uv = unit_vector(v);
+  float dt = dot(uv ,n);
+  float discriminant = 1.0 - ni_over_nt*ni_over_nt*(1 - dt*dt);
+  if (discriminant > 0){
+    refracted = (v - n*dt)*ni_over_nt - n*sqrt(discriminant);
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+float schlick(float cosine, float ref_idx){
+  float r0 = (1-ref_idx)/(1+ref_idx);
+  r0 = r0*r0;
+  return r0 + (1-r0)*pow((1-cosine),5);
+}
+
 //**********/ Ray class     -----------  
 ray::ray(vec3 a, vec3 b){ this->A = a ; this->B = b; }
 vec3 ray::origin(){ return this->A ;}
@@ -66,6 +86,44 @@ struct material_return scatter(gen_material& material, ray r_in, hit_record rec,
     struct material_return temp;
     temp.status = ( dot( scattered.direction() , rec.normal) > 0 ) ; temp.att = attenuation ; temp.scat = scattered;
     return temp;
+  }
+
+  if (material.name == "dielectric"){
+    vec3 outward_normal;
+    vec3 reflected = reflect(r_in.direction(), rec.normal);
+    float ni_over_nt;
+    attenuation = vec3(1.0, 1.0, 1.0);
+    vec3 refracted;
+    float reflect_prob ; float cosine;
+    if ( dot(r_in.direction(), rec.normal) > 0){
+      outward_normal = -rec.normal;
+      ni_over_nt = material.fuzz;
+      cosine = material.fuzz*dot(r_in.direction(), rec.normal)/r_in.direction().length(); 
+    }else{
+      outward_normal = rec.normal;
+      ni_over_nt = 1.0 / material.fuzz ;
+      cosine = -dot(r_in.direction(), rec.normal)/r_in.direction().length(); 
+    }
+
+
+    if ( refract(r_in.direction(), outward_normal, ni_over_nt, refracted) ){
+      reflect_prob = schlick(cosine, material.fuzz);
+    }
+    else{
+      scattered = ray( rec.p,reflected );
+      reflect_prob = 1.0;
+    }
+
+    if (dis(gen) < reflect_prob){
+      scattered = ray( rec.p,reflected );
+    }else{
+      scattered = ray( rec.p,refracted );
+    }
+
+    struct material_return temp;
+    temp.status= true; temp.att = attenuation ; temp.scat = scattered;
+    return temp;
+
   }
 
   if (material.name == "none"){
@@ -142,7 +200,32 @@ struct sp_return hitable_list::hit(ray r, float t_min, float t_max , hit_record 
 }
 
 // ****************  Camera class
-ray camera::get_ray(float u, float v){
-  return ray(this->origin, this->lower_left_corner + this->horizontal*u + this->vertical*v);
+camera::camera(float vfov, float aspect){
+  float theta = vfov*M_PI/180;
+  float half_height = tan(theta/2);
+  float half_width = aspect*half_height;
+  this->lower_left_corner = vec3(-half_width, -half_height, -1.0);
+  this->horizontal = vec3(2.0*half_width, 0.0, 0.0);
+  this->vertical = vec3(0.0, 2*half_height, 0.0);
+  this->origin = vec3(0.0, 0.0, 0.0);
+}
+camera::camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect){
+  vec3 u,v,w;
+  float theta = vfov*M_PI/180;
+  float half_height = tan(theta/2);
+  float half_width = aspect*half_height;
+  this->origin = lookfrom;
+  w = unit_vector(lookfrom - lookat);
+  u = unit_vector(cross(vup, w));
+  v = cross(w,u);
+  this->lower_left_corner = vec3(-half_width, -half_height, -1.0);
+  this->lower_left_corner = this->origin - u*half_width - v*half_height - w;
+  this->horizontal = u*2*half_width;
+  this->vertical = v*2*half_height;
+
+}
+
+ray camera::get_ray(float s, float t){
+  return ray(this->origin, this->lower_left_corner + this->horizontal*s + this->vertical*t - this->origin);
 }
 

@@ -11,7 +11,7 @@ std::random_device rd2;
 std::mt19937 gen2(rd2());
 std::uniform_real_distribution<> dis2(0, 1);
 
-// class to store pixel values
+// ********  class to store pixel values
 class pixel{
 public:
   int ir = 0; int ig = 0; int ib = 0;
@@ -20,7 +20,7 @@ public:
 };
 
 
-// Returns pixel color, given a rayand the world
+// **** Returns pixel color, given a ray and the world
 vec3 color(ray r , hitable_list world, int depth){
   hit_record rec = hit_record();
 
@@ -47,7 +47,7 @@ vec3 color(ray r , hitable_list world, int depth){
   }
 }
 
-// Raytracing calculations
+// ******** Raytracing calculations
 void render(std::vector<pixel> &image  ,hitable_list world, camera cam, int ns, float gamma, int nx, int ny, int ny_start = 0, int ny_end = 0){
   // Check if entire image is needed
   if (ny_start == 0 && ny_end == 0){
@@ -87,25 +87,40 @@ void render(std::vector<pixel> &image  ,hitable_list world, camera cam, int ns, 
   }
 }
 
-// Main
+// ************** Main
 int main(int argc, char** argv){
-  int nx = 200*4 ;int ny = 100*4 ; // Image size
-  int ns = 20 ; // Antialiasing samples per pixel
+  int nx = 200*3 ;int ny = 100*3 ; // Image size
+  int ns = 50 ; // Antialiasing samples per pixel
 
-  camera cam = camera();
+  camera cam = camera( vec3(-2,0.5,1), vec3(0,0,-1), vec3(0,1,0),60, float(nx)/float(ny));
 
   // List of objects in the world
   std::vector<sphere> objects;
-  objects.push_back( sphere(vec3(0,0,-1), 0.5, gen_material(vec3(0.8,0.3,0.3), "lambert", 0) )  );
-  objects.push_back( sphere(vec3(0,-100.5,-1), 100.0, gen_material(vec3(0.8,0.8,0.0), "lambert", 0) )  );
-  objects.push_back( sphere(vec3(1,0,-1.25), 0.5, gen_material(vec3(0.8,0.6,0.2), "metal", 0.3) )  );
-  objects.push_back( sphere(vec3(-1,0,-1.25), 0.5, gen_material(vec3(0.8,0.8,0.8), "metal", 0.1) )  );
+  objects.push_back( sphere(vec3(0,0,-1), 0.5, gen_material(vec3(1.0,1.0,1.0), "metal", 0.0) )  );
+  objects.push_back( sphere(vec3(0,-100.5,-1), 100.0, gen_material(vec3(0.5,0.5,0.5), "lambert", 0) )  );
+  //  objects.push_back( sphere(vec3(1,0,0.0), 0.3, gen_material(vec3(0.8,0.6,0.2), "lambert", 0.3) )  );
+  //objects.push_back( sphere(vec3(-1,0,-1.25), 0.5, gen_material(vec3(1.0,1.0,1.0), "metal", 0.0) )  );
+
+  float r_in = 0.8 ; float r_out = 3.0; ; int n_spheres = 30;
+  float theta ; float temp_rad; float sp_rad;
+  for (int i = 0 ; i < n_spheres ; i++){
+    theta = dis2(gen2)*2*M_PI ; temp_rad = dis2(gen2)*(r_out - r_in) + r_in;
+    sp_rad = dis2(gen2)*(0.1 - 0.05) + 0.05;
+    objects.push_back(sphere(vec3(temp_rad*cos(theta),-0.5+ sp_rad,temp_rad*sin(theta) - 1), sp_rad,
+                             gen_material(vec3(dis2(gen2),dis2(gen2),dis2(gen2)), "lambert", 0.0) )  ) ;
+
+    theta = dis2(gen2)*2*M_PI ; temp_rad = dis2(gen2)*(r_out - r_in) + r_in;
+    sp_rad = dis2(gen2)*(0.1 - 0.05) + 0.05;
+    objects.push_back(sphere(vec3(temp_rad*cos(theta),-0.5+ sp_rad,temp_rad*sin(theta) - 1), sp_rad,
+                             gen_material(vec3(dis2(gen2),dis2(gen2),dis2(gen2)), "metal", 0.0) )  ) ;
+
+  }
 
   hitable_list world = hitable_list(objects, objects.size());
   float gamma = 0.7;
 
   // Number of threads to run
-  int n_th = 4;
+  int n_th = 10;
 
   int start = ny-1 ; int end = start - ny/n_th;
   std::vector<std::vector <pixel>> Images;
